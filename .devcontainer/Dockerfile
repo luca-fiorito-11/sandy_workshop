@@ -21,20 +21,19 @@ RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
 
 
 ############################################
-# Stage 2 — Devcontainer runtime
+# Stage 2 — Devcontainer
 ############################################
-FROM mcr.microsoft.com/devcontainers/python:3.12 AS dev_containers_target_stage
-
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+FROM mcr.microsoft.com/devcontainers/base:bookworm AS dev_containers_target_stage
 
 ############################################
-# System dependencies (minimal but sufficient)
+# System dependencies
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-venv \
     build-essential \
     gfortran \
+    g++ \
     cmake \
     git \
     libhdf5-dev \
@@ -45,47 +44,88 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ############################################
+# Environment
+############################################
+ARG NB_USER=vscode
+ARG NB_UID=1000
+
+ENV USER=${NB_USER} \
+    HOME=/home/${NB_USER} \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+
+############################################
 # Python environment
 ############################################
 RUN python3 -m venv $VIRTUAL_ENV \
- && pip install --upgrade pip setuptools wheel
+ && pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir ipykernel jupyterlab
 
 ############################################
-# Install Python stack (grouped for caching)
+# Scientific Python stack
 ############################################
-RUN pip install \
-    numpy scipy pandas matplotlib h5py lxml
+RUN pip install --no-cache-dir \
+    numpy \
+    scipy \
+    matplotlib \
+    pandas \
+    lxml \
+    h5py
 
-RUN pip install \
-    openmc \
+############################################
+# 🔬 Build + install OpenMC (working method)
+############################################
+RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
+ && cd openmc \
+ && git fetch --tags \
+ && git checkout v0.15.3 \
+ && mkdir build && cd build \
+ && cmake -DCMAKE_BUILD_TYPE=Release \
+          -DOPENMC_ENABLE_MPI=OFF \
+          -DOPENMC_USE_OPENMP=ON \
+          .. \
+ && make -j$(nproc) \
+ && make install \
+ && cd .. \
+ && pip install .
+
+############################################
+# Additional tools
+############################################
+RUN pip install --no-cache-dir \
     sandy \
-    serpentTools
-
-RUN pip install \
-    scikit-learn seaborn \
-    jupyterlab ipykernel
-
-RUN python -m ipykernel install \
-    --name "sandy" \
-    --display-name "Python (Sandy)"
+    serpentTools \
+    openmc_data_downloader \
+    openmc_depletion_plotter \
+    openmc_data
 
 ############################################
-# Copy NJOY binary only
+# Copy NJOY binary
 ############################################
 COPY --from=builder /NJOY2016/build/njoy /usr/local/bin/njoy
 
 RUN ldconfig
 
 ############################################
-# Devcontainer user setup
+# Jupyter kernel (FIXED NAME)
+############################################
+RUN python3 -m ipykernel install \
+    --name "sandy" \
+    --display-name "Python (Sandy)"
+
+############################################
+# Workspace
 ############################################
 WORKDIR /home/vscode
-RUN chown -R vscode:vscode /opt/venv /home/vscode
+RUN chown -R ${NB_UID}:${NB_UID} /opt/venv /home/vscode
 
-USER vscode
+USER ${NB_USER}
 
 ############################################
 # Jupyter
 ############################################
+ENV PORT=8888
 EXPOSE 8888
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser"]
+
+CMD ["jupyter", "lab", "--notebook-dir=/home/vscode/", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
