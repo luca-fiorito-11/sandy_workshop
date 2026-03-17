@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  sandy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sandy_env
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    shm_size: "2g"
