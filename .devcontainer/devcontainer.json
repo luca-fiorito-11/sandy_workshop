@@ -3,7 +3,7 @@
 
     "build": {
         "dockerfile": "Dockerfile",
-        "context": "sandy"
+        "context": "."
     },
 
     "customizations": {
