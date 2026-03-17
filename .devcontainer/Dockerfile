@@ -1,7 +1,7 @@
 ############################################
 # Stage 1 — Build NJOY + OpenMC
 ############################################
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Install build tools for NJOY + OpenMC
 RUN apt-get update && apt-get install -y \
@@ -34,15 +34,15 @@ RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
           .. \
  && make -j$(nproc)
 
-# Install OpenMC Python API in builder stage
+# Install OpenMC Python API (requires Python >= 3.12)
 RUN cd openmc && pip install .
+
 
 ############################################
 # Stage 2 — Runtime Dev Container Image
 ############################################
 FROM mcr.microsoft.com/devcontainers/base:bookworm
 
-# Environment configuration
 ARG NB_USER=vscode
 ARG NB_UID=1000
 
@@ -54,8 +54,9 @@ ENV USER=${NB_USER} \
 
 # Install runtime dependencies + SciPy build deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
     python3-pip \
-    python3-venv \
     git \
     cmake \
     gfortran \
@@ -75,7 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ############################################
 # Python venv + Scientific Stack
 ############################################
-RUN python3 -m venv $VIRTUAL_ENV \
+RUN python3.12 -m venv $VIRTUAL_ENV \
  && $VIRTUAL_ENV/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
  && $VIRTUAL_ENV/bin/pip install --no-cache-dir ipykernel jupyterlab \
  && $VIRTUAL_ENV/bin/pip install --no-cache-dir numpy scipy matplotlib pandas lxml h5py \
@@ -89,7 +90,7 @@ RUN python3 -m venv $VIRTUAL_ENV \
 ############################################
 COPY --from=builder /openmc/build/bin/openmc /usr/local/bin/openmc
 COPY --from=builder /openmc/build/lib /usr/local/lib
-COPY --from=builder /openmc /usr/local/lib/python3.11/site-packages/openmc
+COPY --from=builder /openmc /usr/local/lib/python3.12/site-packages/openmc
 
 COPY --from=builder /NJOY2016/build/njoy /usr/local/bin/njoy
 COPY --from=builder /NJOY2016/build/libnjoy.so /usr/local/lib/
