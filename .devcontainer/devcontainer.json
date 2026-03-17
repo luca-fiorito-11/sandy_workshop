@@ -2,7 +2,7 @@
     "name": "SANDY Workshop Environment",
     "build": {
         "dockerfile": "../Dockerfile",
-        "context": ".."
+        "context": "."
     },
     "customizations": {
         "vscode": {
