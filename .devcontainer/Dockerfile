@@ -131,10 +131,15 @@ ENV USER=${NB_USER} \
     PATH="/opt/venv/bin:$PATH"
 
 ############################################
-# Python venv (created as non-root user)
+# Python venv (must be created as root)
 ############################################
+USER root
+RUN python3 -m venv /opt/venv \
+ && chown -R ${NB_UID}:${NB_UID} /opt/venv
+
+# Switch to user for pip installs
 USER ${NB_USER}
-RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="/opt/venv/bin:$PATH"
 
 ############################################
 # Python dependencies
