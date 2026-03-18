@@ -106,10 +106,21 @@ RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf \
 ENV NJOY=/usr/local/bin/njoy
 
 ############################################
+# Add your Exercises and openmc_scripts
+############################################
+# They will appear inside /home/vscode/
+COPY Exercises /home/vscode/Exercises
+COPY openmc_scripts /home/vscode/openmc_scripts
+
+############################################
 # Workspace
 ############################################
 WORKDIR /home/vscode
-RUN chown -R ${NB_UID}:${NB_UID} /opt/venv /home/vscode
+
+# Assign proper ownership (fast because only 3 paths)
+RUN chown -R ${NB_UID}:${NB_UID} /opt/venv /home/vscode \
+ && chmod -R u+rwX /home/vscode/openmc_scripts /home/vscode/Exercises
+
 USER ${NB_USER}
 
 ############################################
@@ -118,3 +129,4 @@ USER ${NB_USER}
 ENV PORT=8888
 EXPOSE 8888
 CMD ["jupyter", "lab", "--notebook-dir=/home/vscode/", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
+``
