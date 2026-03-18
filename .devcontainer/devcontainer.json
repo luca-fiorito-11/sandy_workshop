@@ -29,5 +29,5 @@
         }
     },
 
-    "postCreateCommand": "bash .devcontainer/post-create.sh"
+    "_postCreateCommand": "bash .devcontainer/post-create.sh"
 }
