@@ -30,7 +30,7 @@ RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
  && cmake -DCMAKE_BUILD_TYPE=Release -DOPENMC_ENABLE_MPI=OFF -DOPENMC_USE_OPENMP=ON .. \
  && make -j$(nproc)
 
-# Install Python OpenMC package
+# Install Python OpenMC package in builder stage
 RUN cd openmc && pip install --no-cache-dir .
 
 ############################################
@@ -39,7 +39,7 @@ RUN cd openmc && pip install --no-cache-dir .
 FROM python:3.12-slim
 
 ############################################
-# System dependencies
+# System dependencies (runtime only)
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates \
@@ -53,7 +53,8 @@ ARG NB_UID=1000
 ENV USER=${NB_USER} \
     HOME=/home/${NB_USER} \
     VIRTUAL_ENV=/opt/venv \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 
 ############################################
 # Python environment
