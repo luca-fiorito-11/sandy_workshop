@@ -1,7 +1,7 @@
-# ===== Stage 1: NJOY builder =====
+# ===== Stage 1: Build NJOY =====
 FROM python:3.12-slim AS njoy-builder
 
-# Install build dependencies
+# Build dependencies for NJOY
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gfortran \
@@ -21,22 +21,34 @@ RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
 # ===== Stage 2: Binder environment =====
 FROM python:3.12-slim AS binder-env
 
-# System packages for Python
+# System packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-venv python3-pip wget ca-certificates \
+    python3-pip python3-venv \
+    libhdf5-dev libopenblas-dev \
+    wget ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create virtualenv
-RUN python3 -m venv /opt/venv \
- && /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
- && /opt/venv/bin/pip install --no-cache-dir \
-    ipykernel jupyterlab numpy scipy matplotlib pandas seaborn sandy
+# Create virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN python3 -m venv $VIRTUAL_ENV
 
-# Copy NJOY executable from builder
-COPY --from=njoy-builder /NJOY2016/build/NJOY* /usr/local/bin/
+# Upgrade pip and install Python packages
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir \
+    ipykernel notebook \
+    numpy scipy matplotlib pandas seaborn h5py \
+    --extra-index-url https://test.pypi.org/simple/ sandy==1.2.0b1
 
-# Install Jupyter kernel
-RUN /opt/venv/bin/python -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
+# Register Sandy kernel
+RUN python -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
+
+# Copy NJOY binary + shared library from builder stage
+COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
+COPY --from=njoy-builder /NJOY2016/build/libnjoy.so /usr/local/lib/
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf \
+ && ldconfig
+ENV NJOY=/usr/local/bin/njoy
 
 # Set working directory
 WORKDIR /home/jovyan
@@ -44,5 +56,5 @@ WORKDIR /home/jovyan
 # Expose Jupyter port
 EXPOSE 8888
 
-# Start Jupyter Lab
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
+# Run Jupyter Notebook
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
