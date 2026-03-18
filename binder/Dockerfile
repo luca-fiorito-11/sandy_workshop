@@ -37,4 +37,4 @@ ENV NJOY=/usr/local/bin/njoy
 WORKDIR /home/jovyan
 
 # Minimal launch for Binder: no token/password for easy access
-CMD ["start-notebook.sh", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
