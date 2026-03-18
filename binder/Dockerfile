@@ -23,7 +23,7 @@ RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
 # ===============================
 # Stage 1: Binder-ready minimal image
 # ===============================
-FROM jupyter/minimal-notebook:python-3.12.1
+FROM jupyter/minimal-notebook:python-3.12
 
 # Copy NJOY binary and shared library
 COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
