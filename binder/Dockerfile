@@ -39,10 +39,10 @@ RUN cd openmc && pip install --no-cache-dir .
 FROM python:3.12-slim
 
 ############################################
-# System dependencies
+# System dependencies (add binutils for strip)
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates \
+    python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates binutils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ############################################
@@ -75,17 +75,17 @@ COPY --from=openmc-builder /openmc/build/bin/openmc /usr/local/bin/openmc
 COPY --from=openmc-builder /openmc/build/lib /usr/local/lib
 COPY --from=openmc-builder /usr/local/lib/python3.12/site-packages/openmc /usr/local/lib/python3.12/site-packages/openmc
 
-# Strip OpenMC binary to speed up loading
-RUN strip /usr/local/bin/openmc || true
-
 ############################################
 # Copy NJOY binary + shared library
 ############################################
 COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
 COPY --from=njoy-builder /NJOY2016/build/libnjoy.so /usr/local/lib/
-RUN strip /usr/local/bin/njoy || true
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf && ldconfig
-ENV NJOY=/usr/local/bin/njoy
+
+############################################
+# Strip binaries to reduce size
+############################################
+RUN strip /usr/local/bin/openmc /usr/local/bin/njoy || true
 
 ############################################
 # Workspace
@@ -94,16 +94,9 @@ WORKDIR /home/vscode
 USER ${NB_USER}
 
 ############################################
-# Jupyter
+# JupyterLab (simplified CMD for Binder)
 ############################################
-ENV PORT=8888
-EXPOSE 8888
+ENV JUPYTER_ENABLE_LAB=yes
+ENV JUPYTER_WORKDIR=/home/vscode
 
-# Simpler CMD with higher timeout and iopub limit
-CMD ["jupyter", "lab", \
-     "--notebook-dir=/home/vscode", \
-     "--port=8888", \
-     "--no-browser", \
-     "--ip=0.0.0.0", \
-     "--ServerApp.iopub_data_rate_limit=10000000", \
-     "--ServerApp.shutdown_no_activity_timeout=3600"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''"]
