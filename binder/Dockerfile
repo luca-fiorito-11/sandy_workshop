@@ -34,15 +34,15 @@ RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
 RUN cd openmc && pip install --no-cache-dir .
 
 ############################################
-# Stage 2 — Runtime image (Binder-friendly)
+# Stage 2 — Runtime Devcontainer
 ############################################
 FROM python:3.12-slim
 
 ############################################
-# Minimal runtime deps
+# System dependencies
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-venv python3-pip libhdf5-dev libopenblas-dev wget ca-certificates \
+    python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ############################################
@@ -72,14 +72,18 @@ RUN python3 -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
 # Copy OpenMC binaries + Python package from builder
 ############################################
 COPY --from=openmc-builder /openmc/build/bin/openmc /usr/local/bin/openmc
-COPY --from=openmc-builder /usr/local/lib/libopenmc* /usr/local/lib/
+COPY --from=openmc-builder /openmc/build/lib /usr/local/lib
 COPY --from=openmc-builder /usr/local/lib/python3.12/site-packages/openmc /usr/local/lib/python3.12/site-packages/openmc
+
+# Strip OpenMC binary to speed up loading
+RUN strip /usr/local/bin/openmc || true
 
 ############################################
 # Copy NJOY binary + shared library
 ############################################
 COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
 COPY --from=njoy-builder /NJOY2016/build/libnjoy.so /usr/local/lib/
+RUN strip /usr/local/bin/njoy || true
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf && ldconfig
 ENV NJOY=/usr/local/bin/njoy
 
@@ -94,4 +98,12 @@ USER ${NB_USER}
 ############################################
 ENV PORT=8888
 EXPOSE 8888
-CMD ["jupyter", "lab", "--notebook-dir=/home/vscode/", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
+
+# Simpler CMD with higher timeout and iopub limit
+CMD ["jupyter", "lab",
+     "--notebook-dir=/home/vscode/",
+     "--port=8888",
+     "--no-browser",
+     "--ip=0.0.0.0",
+     "--ServerApp.iopub_data_rate_limit=1.0e10",
+     "--ServerApp.shutdown_no_activity_timeout=60"]
