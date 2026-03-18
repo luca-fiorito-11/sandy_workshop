@@ -87,9 +87,9 @@ ENV NJOY=/usr/local/bin/njoy
 # Workspace (fast ownership using COPY --chown)
 ############################################
 WORKDIR /home/vscode
-COPY --chown=${NB_UID}:${NB_UID} Datalabs/ /home/vscode/Datalabs/
-COPY --chown=${NB_UID}:${NB_UID} Extra/ /home/vscode/Extra/
-COPY --chown=${NB_UID}:${NB_UID} data/ /home/vscode/data/
+# COPY --chown=${NB_UID}:${NB_UID} Datalabs/ /home/vscode/Datalabs/
+# COPY --chown=${NB_UID}:${NB_UID} Extra/ /home/vscode/Extra/
+# COPY --chown=${NB_UID}:${NB_UID} data/ /home/vscode/data/
 
 USER ${NB_USER}
 
