@@ -129,4 +129,3 @@ USER ${NB_USER}
 ENV PORT=8888
 EXPOSE 8888
 CMD ["jupyter", "lab", "--notebook-dir=/home/vscode/", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
-``
