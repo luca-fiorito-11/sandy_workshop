@@ -30,19 +30,19 @@ RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
  && cmake -DCMAKE_BUILD_TYPE=Release -DOPENMC_ENABLE_MPI=OFF -DOPENMC_USE_OPENMP=ON .. \
  && make -j$(nproc)
 
-# Install Python OpenMC package in builder stage
+# Install Python OpenMC package
 RUN cd openmc && pip install --no-cache-dir .
 
 ############################################
-# Stage 2 — Runtime Devcontainer
+# Stage 2 — Runtime image (Binder-friendly)
 ############################################
 FROM python:3.12-slim
 
 ############################################
-# System dependencies (runtime only)
+# Minimal runtime deps
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates \
+    python3-venv python3-pip libhdf5-dev libopenblas-dev wget ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ############################################
@@ -53,8 +53,7 @@ ARG NB_UID=1000
 ENV USER=${NB_USER} \
     HOME=/home/${NB_USER} \
     VIRTUAL_ENV=/opt/venv \
-    PATH="/opt/venv/bin:$PATH" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+    PATH="/opt/venv/bin:$PATH"
 
 ############################################
 # Python environment
@@ -73,7 +72,7 @@ RUN python3 -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
 # Copy OpenMC binaries + Python package from builder
 ############################################
 COPY --from=openmc-builder /openmc/build/bin/openmc /usr/local/bin/openmc
-COPY --from=openmc-builder /openmc/build/lib /usr/local/lib
+COPY --from=openmc-builder /usr/local/lib/libopenmc* /usr/local/lib/
 COPY --from=openmc-builder /usr/local/lib/python3.12/site-packages/openmc /usr/local/lib/python3.12/site-packages/openmc
 
 ############################################
@@ -85,13 +84,9 @@ RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf && ldconfig
 ENV NJOY=/usr/local/bin/njoy
 
 ############################################
-# Workspace (fast ownership using COPY --chown)
+# Workspace
 ############################################
 WORKDIR /home/vscode
-# COPY --chown=${NB_UID}:${NB_UID} Datalabs/ /home/vscode/Datalabs/
-# COPY --chown=${NB_UID}:${NB_UID} Extra/ /home/vscode/Extra/
-# COPY --chown=${NB_UID}:${NB_UID} data/ /home/vscode/data/
-
 USER ${NB_USER}
 
 ############################################
