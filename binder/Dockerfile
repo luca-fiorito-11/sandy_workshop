@@ -1,19 +1,12 @@
 ############################################
 # Stage 1 — Build NJOY
 ############################################
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim AS njoy-builder
 
-# Build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gfortran \
-    cmake \
-    git \
-    wget \
-    ca-certificates \
+    build-essential gfortran cmake git wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Build NJOY2016
 RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
  && cd NJOY2016 \
  && mkdir build && cd build \
@@ -21,26 +14,35 @@ RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
  && make -j$(nproc)
 
 ############################################
-# Stage 2 — Devcontainer
+# Stage 1b — Build OpenMC
 ############################################
-FROM mcr.microsoft.com/devcontainers/base:bookworm
+FROM python:3.12-slim AS openmc-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gfortran cmake git build-essential libhdf5-dev libopenblas-dev wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
+ && cd openmc \
+ && git fetch --tags \
+ && git checkout v0.15.3 \
+ && mkdir build && cd build \
+ && cmake -DCMAKE_BUILD_TYPE=Release -DOPENMC_ENABLE_MPI=OFF -DOPENMC_USE_OPENMP=ON .. \
+ && make -j$(nproc)
+
+# Install Python OpenMC package
+RUN cd openmc && pip install --no-cache-dir .
+
+############################################
+# Stage 2 — Runtime Devcontainer
+############################################
+FROM python:3.12-slim
 
 ############################################
 # System dependencies
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-venv \
-    build-essential \
-    gfortran \
-    g++ \
-    cmake \
-    git \
-    libhdf5-dev \
-    libopenblas-dev \
-    mpich \
-    wget \
-    ca-certificates \
+    python3-venv python3-pip libhdf5-dev libopenblas-dev mpich wget ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ############################################
@@ -67,36 +69,28 @@ RUN python3 -m venv $VIRTUAL_ENV \
 RUN python3 -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
 
 ############################################
-# Build + install OpenMC
+# Copy OpenMC binaries + Python package from builder
 ############################################
-RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
- && cd openmc \
- && git fetch --tags \
- && git checkout v0.15.3 \
- && mkdir build && cd build \
- && cmake -DCMAKE_BUILD_TYPE=Release \
-          -DOPENMC_ENABLE_MPI=OFF \
-          -DOPENMC_USE_OPENMP=ON \
-          .. \
- && make -j$(nproc) \
- && make install \
- && cd .. \
- && pip install .
+COPY --from=openmc-builder /openmc/build/bin/openmc /usr/local/bin/openmc
+COPY --from=openmc-builder /openmc/build/lib /usr/local/lib
+COPY --from=openmc-builder /usr/local/lib/python3.12/site-packages/openmc /usr/local/lib/python3.12/site-packages/openmc
 
 ############################################
 # Copy NJOY binary + shared library
 ############################################
-COPY --from=builder /NJOY2016/build/njoy /usr/local/bin/njoy
-COPY --from=builder /NJOY2016/build/libnjoy.so /usr/local/lib/
-RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf \
- && ldconfig
+COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
+COPY --from=njoy-builder /NJOY2016/build/libnjoy.so /usr/local/lib/
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf && ldconfig
 ENV NJOY=/usr/local/bin/njoy
 
 ############################################
-# Workspace
+# Workspace (fast ownership using COPY --chown)
 ############################################
 WORKDIR /home/vscode
-RUN chown -R ${NB_UID}:${NB_UID} /opt/venv /home/vscode
+COPY --chown=${NB_UID}:${NB_UID} Datalabs/ /home/vscode/Datalabs/
+COPY --chown=${NB_UID}:${NB_UID} Extra/ /home/vscode/Extra/
+COPY --chown=${NB_UID}:${NB_UID} data/ /home/vscode/data/
+
 USER ${NB_USER}
 
 ############################################
