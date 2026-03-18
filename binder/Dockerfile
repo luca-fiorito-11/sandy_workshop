@@ -1,14 +1,9 @@
 # ===== Stage 1: Build NJOY =====
 FROM python:3.12-slim AS njoy-builder
 
-# Build dependencies for NJOY
+# System dependencies to build NJOY
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gfortran \
-    cmake \
-    git \
-    wget \
-    ca-certificates \
+    gfortran build-essential cmake git wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and build NJOY2016
@@ -19,42 +14,43 @@ RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
  && make -j$(nproc)
 
 # ===== Stage 2: Binder environment =====
-FROM python:3.12-slim AS binder-env
+FROM python:3.12-slim
 
-# System packages
+# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip python3-venv \
-    libhdf5-dev libopenblas-dev \
-    wget ca-certificates \
+    libhdf5-dev libopenblas-dev mpich wget ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN python3 -m venv $VIRTUAL_ENV
-
-# Upgrade pip and install Python packages
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
- && pip install --no-cache-dir \
-    ipykernel notebook \
-    numpy scipy matplotlib pandas seaborn h5py \
-    --extra-index-url https://test.pypi.org/simple/ sandy==1.2.0b1
-
-# Register Sandy kernel
-RUN python -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
-
-# Copy NJOY binary + shared library from builder stage
+# ===== Copy NJOY from builder =====
 COPY --from=njoy-builder /NJOY2016/build/njoy /usr/local/bin/njoy
 COPY --from=njoy-builder /NJOY2016/build/libnjoy.so /usr/local/lib/
 RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf \
  && ldconfig
 ENV NJOY=/usr/local/bin/njoy
 
-# Set working directory
+# ===== Python environment =====
+# Minimal venv (optional)
+# RUN python3 -m venv /opt/venv \
+#  && /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# ===== Install Sandy and light dependencies =====
+# For initial testing, comment out heavy packages
+RUN python3 -m pip install --no-cache-dir \
+    -i https://test.pypi.org/simple/ \
+    --extra-index-url https://pypi.org/simple \
+    sandy==1.2.0b1 \
+    # numpy scipy matplotlib pandas h5py seaborn \
+    # sandy serpentTools openmc_data_downloader openmc_depletion_plotter openmc_data \
+    ipykernel jupyterlab
+
+# Register Sandy kernel
+RUN python3 -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
+
+# ===== Workspace =====
 WORKDIR /home/jovyan
+# USER jovyan  # uncomment if you create a non-root user
 
-# Expose Jupyter port
+# ===== Jupyter =====
+ENV PORT=8888
 EXPOSE 8888
-
-# Run Jupyter Notebook
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
