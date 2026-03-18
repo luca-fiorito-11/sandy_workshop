@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<cross_sections>
+  <library materials="U234" path="U234.h5" type="neutron"/>
+  <library materials="U235" path="U235.h5" type="neutron"/>
+  <library materials="U238" path="U238.h5" type="neutron"/>
+</cross_sections>

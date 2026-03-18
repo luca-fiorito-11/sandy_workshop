@@ -1,0 +1,1 @@
+python -m sandy.sampling  U234.dat --samples 10 --acer --temperatures 293.15

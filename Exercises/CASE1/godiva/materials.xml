@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<materials>
+  <material id="1" name="heu" depletable="true">
+    <density value="0.047984" units="atom/b-cm"/>
+    <nuclide name="U234" ao="0.01025003"/>
+    <nuclide name="U235" ao="0.9376829"/>
+    <nuclide name="U238" ao="0.0520671"/>
+  </material>
+</materials>

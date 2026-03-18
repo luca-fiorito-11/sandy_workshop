@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<geometry>
+  <cell id="1" name="fuel" material="1" region="-1" universe="1"/>
+  <cell id="2" name="out" material="void" region="1" universe="1"/>
+  <surface id="1" type="sphere" boundary="vacuum" coeffs="0.0 0.0 0.0 8.7407"/>
+</geometry>

@@ -1,7 +1,5 @@
 # openmc files
-*.xml
 tallies.out
-*.h5
 
 venv/
 
