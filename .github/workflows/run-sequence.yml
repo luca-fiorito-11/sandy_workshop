@@ -29,9 +29,10 @@ jobs:
     - name: Run Papermill inside Devcontainer
       run: |
         docker run --rm \
+          -u root \
           -v ${{ github.workspace }}:/workspace \
           -w /workspace/Exercises/CASE1/u234_samples \
-          ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }}):devcontainer \
+          ghcr.io/luca-fiorito-11/sandy_workshop:devcontainer \
           bash -c "
             papermill run_sampling_sequence.ipynb run_sampling_sequence_executed.ipynb --log-output &&
             papermill xs_samples_analysis.ipynb xs_samples_analysis_executed.ipynb --log-output
