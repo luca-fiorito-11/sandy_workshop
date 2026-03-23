@@ -1,5 +1,5 @@
 
-# SANDY Workshop – Nuclear Data Analysis & OpenMC Exercises
+# SANDY Workshop
 
 This repository contains materials for a hands‑on workshop focused on **neutron‑induced reaction data**, **uncertainty quantification**, and **Monte Carlo simulation workflows** using **SANDY**, **NJOY**, **OpenMC**, and related tools. It includes exercises, sample data, environment setups, and configurations for running everything fully reproducibly.
 
