@@ -11,23 +11,25 @@ run_sample() {
 
     # RUN ON A TEMPORARY FOLDER
     DIR="SMP${i}"
-    mkdir -p "$DIR"
+    mkdir -pv "$DIR"
 
     # COPY FILES
-    cp geometry.xml "$DIR/geometry.xml"
-    cp materials.xml "$DIR/materials.xml"
+    cp -v geometry.xml "$DIR/geometry.xml"
+    cp -v materials.xml "$DIR/materials.xml"
 
     # CHANGE SEED AT EVERY RUN
     SEED=$((RANDOM + $$ + i))
+    echo "changing seed to ${SEED} in $DIR/settings.xml ..."
     sed "s|<seed>1</seed>|<seed>${SEED}</seed>|" settings.xml > "$DIR/settings.xml"
 
     cd "$DIR" || exit 1
 
     # EXPORT CORRECT CROSS SECTIONS
+    echo "export OPENMC_CROSS_SECTIONS="${DATA_FOLDER}/cross_sections_${i}.xml ..."
     export OPENMC_CROSS_SECTIONS="${DATA_FOLDER}/cross_sections_${i}.xml"
     export OMP_NUM_THREADS=1   # avoid oversubscription
 
-    echo "RUNNING SMP ${i}..."
+    echo "running openmc for SMP=${i} ..."
     openmc    # > "log_${i}.txt" 2>&1
 
     # MOVE OUTPUTS TO TARGET FOLDER
