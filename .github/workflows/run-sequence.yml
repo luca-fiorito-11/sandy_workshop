@@ -38,7 +38,7 @@ jobs:
             cd Exercises/CASE1/u234_samples && \
             papermill run_sampling_sequence.ipynb run_sampling_sequence_executed.ipynb --log-output && \
             papermill xs_samples_analysis.ipynb xs_samples_analysis_executed.ipynb --log-output && \
-            cd ../../godiva && \
+            cd ../godiva && \
             bash run_samples_godiva.sh
           "
 
