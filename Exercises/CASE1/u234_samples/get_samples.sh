@@ -7,7 +7,7 @@ python -m sandy.sampling  U234.dat --samples 20 --acer --temperatures 293.15
 # MOVE TO DEDICATED FOLDERS
 OUTDIR=ACEFILES
 mkdir -p $OUTDIR
-mv -v *.02c $OUTDIR
+mv -v *.03c $OUTDIR
 
 OUTDIR=ENDF6
 mkdir -p $OUTDIR
