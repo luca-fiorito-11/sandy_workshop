@@ -36,11 +36,11 @@ jobs:
           ghcr.io/luca-fiorito-11/sandy_workshop:devcontainer \
           bash -e -o pipefail -c "
             cd Exercises/CASE1/u234_samples && \
-            sh get_samples.sh && \
-            sh get_h5file.sh && \
+            bash get_samples.sh && \
+            bash get_h5file.sh && \
             papermill xs_samples_analysis.ipynb xs_samples_analysis_executed.ipynb --log-output && \
             cd ../godiva && \
-            sh run_samples_godiva.sh
+            bash run_samples_godiva.sh
           "
 
     - name: Upload executed notebooks
