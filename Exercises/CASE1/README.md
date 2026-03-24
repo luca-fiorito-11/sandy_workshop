@@ -81,15 +81,15 @@ Notebook: `post_processing_godiva_samples.ipynb`
 ### U‑234 workflow
 ```
 cd u234_samples
-sh get_samples.sh
-sh get_h5file.sh
+bash get_samples.sh
+bash get_h5file.sh
 jupyter lab
 ```
 
 ### GODIVA workflow
 ```
 cd godiva
-sh run_samples_godiva.sh
+bash run_samples_godiva.sh
 jupyter lab
 ```
 
