@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Build NJOY2016
 RUN git clone --depth 1 https://github.com/njoy/NJOY2016.git \
  && cd NJOY2016 \
@@ -30,6 +31,7 @@ FROM mcr.microsoft.com/devcontainers/base:bookworm
 ############################################
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
+    python3-venv \
     build-essential \
     gfortran \
     g++ \
@@ -37,6 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     libhdf5-dev \
     libopenblas-dev \
+    mpich \
     wget \
     ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -47,25 +50,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG NB_USER=vscode
 ARG NB_UID=1000
 ENV USER=${NB_USER} \
-    HOME=/home/${NB_USER}
+    HOME=/home/${NB_USER} \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
 
 ############################################
-# Python environment (system pip)
+# Python environment
 ############################################
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages \
- && pip install --no-cache-dir --break-system-packages \
+RUN python3 -m venv $VIRTUAL_ENV \
+ && pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir \
     ipykernel jupyterlab nbconvert \
-    numpy scipy matplotlib pandas lxml h5py seaborn papermill \
+    numpy scipy matplotlib pandas lxml h5py seaborn papermill\
     --index-url https://test.pypi.org/simple/ \
     --extra-index-url https://pypi.org/simple \
     sandy==1.2.0b1 \
     serpentTools openmc_data_downloader openmc_depletion_plotter openmc_data
+
+# Register Sandy kernel
+RUN python3 -m ipykernel install --name "sandy" --display-name "Python (Sandy)"
 
 ############################################
 # Build + install OpenMC
 ############################################
 RUN git clone --depth 1 https://github.com/openmc-dev/openmc.git \
  && cd openmc \
+ && git fetch --tags \
  && git checkout v0.15.3 \
  && mkdir build && cd build \
  && cmake -DCMAKE_BUILD_TYPE=Release \
@@ -86,20 +96,21 @@ RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/njoy.conf \
  && ldconfig
 ENV NJOY=/usr/local/bin/njoy
 
-############################################
-# Workspace setup
-############################################
+# Prepare workspace and copy files
 WORKDIR ${HOME}
 COPY --chown=${NB_UID}:${NB_UID} Exercises/ ${HOME}/Exercises/
 COPY --chown=${NB_UID}:${NB_UID} openmc_data/ ${HOME}/openmc_data/
 
 ############################################
-# Final user + Jupyter
+# Workspace
 ############################################
 WORKDIR /home/vscode
-RUN chown -R ${NB_UID}:${NB_UID} /home/vscode
+RUN chown -R ${NB_UID}:${NB_UID} /opt/venv /home/vscode
 USER ${NB_USER}
 
+############################################
+# Jupyter
+############################################
 ENV PORT=8888
 EXPOSE 8888
 CMD ["jupyter", "lab", "--notebook-dir=/home/vscode/", "--port=8888", "--no-browser", "--ip=0.0.0.0"]
