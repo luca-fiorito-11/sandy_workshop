@@ -52,8 +52,8 @@ ENV USER=${NB_USER} \
 ############################################
 # Python environment (system pip)
 ############################################
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
- && pip install --no-cache-dir \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages \
+ && pip install --no-cache-dir --break-system-packages \
     ipykernel jupyterlab nbconvert \
     numpy scipy matplotlib pandas lxml h5py seaborn papermill \
     --index-url https://test.pypi.org/simple/ \
