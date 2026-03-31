@@ -64,7 +64,7 @@ RUN python3 -m venv $VIRTUAL_ENV \
     numpy scipy matplotlib pandas lxml h5py seaborn papermill\
     --index-url https://test.pypi.org/simple/ \
     --extra-index-url https://pypi.org/simple \
-    sandy==1.2.0b1 \
+    sandy==1.2.0b2 \
     serpentTools openmc_data_downloader openmc_depletion_plotter openmc_data
 
 # Register Sandy kernel
