@@ -12,7 +12,7 @@ The workshop teaches participants to:
 ### 🔧 Using SANDY
 - Process nuclear data evaluations
 - Generate random nuclear data samples
-- Propagate uncertainties to integral benchmarks
+- Propagate uncertainties with a Stochastic merhod
 - Visualize and compare evaluated nuclear data
 
 ### 🔬 Using OpenMC
