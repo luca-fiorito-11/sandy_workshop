@@ -1,20 +1,44 @@
-
 # CASE1 – Sampling Workflow (U‑234 and GODIVA Model)
 
 This folder contains two complete sequences:
-1. **U‑234 nuclear data sampling** using SANDY and OpenMC
-2. **GODIVA criticality model sampling** using OpenMC with perturbed nuclear data
+1. **Nuclear data stochastic sampling** using SANDY
+2. **GODIVA criticality model uncertainty propagation** using OpenMC with perturbed nuclear data
 
 Folder structure:
+
 ```
 Exercise/CASE1/
 ├── u234_samples/          # U‑234 sampling workflow
 ├── godiva/                # GODIVA model and sampling workflow
 └── README.md
 ```
+---
+
+## 1. Quick Start
+
+You can run the entire **stochastic sampling** and **uncertainty propagation** workflows directly from a terminal (command line):
+
+### Stochastic Sampling Workflow
+```
+cd u234_samples
+bash get_samples.sh
+bash get_h5file.sh
+jupyter lab  # open and run "xs_samples_analysis.ipynb"
+cd ..
+```
+
+### GODIVA Workflow
+```
+cd godiva
+bash run_samples_godiva.sh
+jupyter lab  # run notebook "post_processing_godiva_samples.ipynb"
+cd ..
+```
+
+> Here, `jupyter lab` simply means launching the specified notebook.
 
 ---
-## 1. U‑234 Sampling Workflow
+## 2. Stochastic Sampling Workflow
 Located in: `Exercise/CASE1/u234_samples/`
 
 This workflow generates, converts, and analyzes 20 perturbed U‑234 nuclear data samples.
@@ -37,7 +61,7 @@ Notebook: `xs_samples_analysis.ipynb`
 - Visualizes reaction‑dependent variations
 
 ---
-## 2. GODIVA Criticality Sampling Workflow
+## 2. Uncertainty Propagation Workflow
 Located in: `Exercise/CASE1/godiva/`
 
 This workflow runs a series of GODIVA criticality calculations for perturbed nuclear data.
@@ -74,28 +98,3 @@ Notebook: `post_processing_godiva_samples.ipynb`
 - Loads all statepoint files pregenerated from U-235 uncertainties
 - Computes k‑eff distributions
 - Produces statistical summaries and plots
-
----
-## 3. Quick Start
-
-### U‑234 workflow
-```
-cd u234_samples
-bash get_samples.sh
-bash get_h5file.sh
-jupyter lab
-```
-
-### GODIVA workflow
-```
-cd godiva
-bash run_samples_godiva.sh
-jupyter lab
-```
-
----
-## Purpose
-These workflows support:
-- Nuclear data uncertainty propagation
-- Criticality safety analysis
-- Benchmark training and demonstration
