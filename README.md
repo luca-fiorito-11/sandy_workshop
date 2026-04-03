@@ -5,6 +5,12 @@ This repository contains materials for a hands‑on workshop focused on **neutro
 
 ---
 
+## 📘 0. Introduction
+
+If you are not yet familiar with [SANDY](https://github.com/luca-fiorito-11/sandy) or the principles of stochastic uncertainty propagation, you may want to start by browsing [this presentation](https://github.com/luca-fiorito-11/sandy_workshop/blob/main/PHYSOR2026%20-%20sandy%20workshop.pdf).
+
+---
+
 ## 🎯 1. Purpose of the Workshop
 
 The workshop teaches participants to:
